@@ -22,9 +22,19 @@ class Settings(BaseSettings):
     allowed_origins: str = "http://localhost:5173"
     reindex_token: str = "change-me"
 
+    # Self-ping keep-alive (comma-separated URLs, active window in IST hours [start, end))
+    self_ping_urls: str = ""
+    self_ping_interval_seconds: int = 600
+    self_ping_start_hour_ist: int = 7
+    self_ping_end_hour_ist: int = 13
+
     @property
     def cors_origins(self) -> list[str]:
         return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+
+    @property
+    def self_ping_url_list(self) -> list[str]:
+        return [u.strip() for u in self.self_ping_urls.split(",") if u.strip()]
 
 
 settings = Settings()

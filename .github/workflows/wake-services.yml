@@ -1,0 +1,28 @@
+name: Wake Render services at 7am IST
+
+on:
+  schedule:
+    # 01:30 UTC = 07:00 IST daily
+    - cron: "30 1 * * *"
+  workflow_dispatch:
+
+jobs:
+  wake:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend
+        run: |
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://rag-chatbot-1-sy4e.onrender.com/health || true)
+            echo "Backend attempt $i -> $code"
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 15
+          done
+      - name: Ping frontend
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://rag-chatbot-frontend-f9f8.onrender.com/ || true)
+            echo "Frontend attempt $i -> $code"
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 10
+          done

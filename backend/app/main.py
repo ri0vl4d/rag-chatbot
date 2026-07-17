@@ -1,8 +1,13 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 
+import httpx
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
+IST = timezone(timedelta(hours=5, minutes=30))
 
 from app.config import settings
 from app.rag.chain import answer_question, build_llm
@@ -52,6 +57,37 @@ def index_corpus() -> tuple[int, int]:
     return len(docs), len(chunks)
 
 
+async def self_ping_loop() -> None:
+    """Ping configured URLs every interval, only within the IST active window."""
+    urls = settings.self_ping_url_list
+    if not urls:
+        logger.info("Self-ping disabled (SELF_PING_URLS not set).")
+        return
+    start_h = settings.self_ping_start_hour_ist
+    end_h = settings.self_ping_end_hour_ist
+    logger.info(
+        "Self-ping active %02d:00–%02d:00 IST every %ds for %d URL(s).",
+        start_h, end_h, settings.self_ping_interval_seconds, len(urls),
+    )
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        while True:
+            try:
+                now_ist = datetime.now(IST)
+                if start_h <= now_ist.hour < end_h:
+                    for url in urls:
+                        try:
+                            r = await client.get(url)
+                            logger.info("Self-ping %s -> %d", url, r.status_code)
+                        except Exception as e:
+                            logger.warning("Self-ping %s failed: %s", url, e)
+                await asyncio.sleep(settings.self_ping_interval_seconds)
+            except asyncio.CancelledError:
+                break
+            except Exception:
+                logger.exception("Self-ping loop error")
+                await asyncio.sleep(settings.self_ping_interval_seconds)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting up — building index and LLM client.")
@@ -67,7 +103,9 @@ async def lifespan(app: FastAPI):
         logger.info("NVIDIA NIM client ready: %s", settings.nvidia_model)
     else:
         logger.warning("NVIDIA_API_KEY missing — /api/chat will return 503 until set.")
+    ping_task = asyncio.create_task(self_ping_loop())
     yield
+    ping_task.cancel()
     logger.info("Shutting down.")
 
 

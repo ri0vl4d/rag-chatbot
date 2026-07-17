@@ -1,13 +1,3 @@
----
-title: RAG Chatbot Backend
-emoji: 🤖
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-pinned: false
-app_port: 7860
----
-
 # RAG Chatbot
 
 A retrieval-augmented generation chatbot that answers questions grounded in your own markdown documents.
@@ -17,7 +7,7 @@ A retrieval-augmented generation chatbot that answers questions grounded in your
 - **Embeddings**: `sentence-transformers/all-MiniLM-L6-v2` (local, no API key)
 - **Vector store**: FAISS in-memory
 - **Frontend**: React + Vite + TypeScript + TailwindCSS
-- **Deploy**: HuggingFace Spaces (backend) + Vercel (frontend) — both free, no card
+- **Deploy**: Render (free web service + free static site)
 
 ---
 

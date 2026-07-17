@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     self_ping_urls: str = ""
     self_ping_interval_seconds: int = 600
     self_ping_start_hour_ist: int = 7
-    self_ping_end_hour_ist: int = 13
+    self_ping_end_hour_ist: int = 1
 
     @property
     def cors_origins(self) -> list[str]:

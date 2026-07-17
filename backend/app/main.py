@@ -73,7 +73,9 @@ async def self_ping_loop() -> None:
         while True:
             try:
                 now_ist = datetime.now(IST)
-                if start_h <= now_ist.hour < end_h:
+                h = now_ist.hour
+                in_window = (start_h <= h < end_h) if start_h < end_h else (h >= start_h or h < end_h)
+                if in_window:
                     for url in urls:
                         try:
                             r = await client.get(url)
